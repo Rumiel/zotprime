@@ -280,6 +280,21 @@ class Zotero_Attachments {
 			if (preg_match("/%ZB64$/", $stat['name'])) {
 				$filename = Z_Base64::decode(substr($stat['name'], 0, -5));
 				$filename = self::decodeRelativeDescriptorString($filename);
+				
+				// Validate decoded filename to prevent path traversal
+				// Check that decoded name is still a basename (no directory separators)
+				if ($filename != basename($filename)) {
+					Z_Core::logError("Skipping ZIP entry with path traversal in decoded name: " . $stat['name']);
+					continue;
+				}
+				// Additional check: ensure the resolved path stays within destDir
+				$resolvedPath = realpath($destDir) . DIRECTORY_SEPARATOR . $filename;
+				$normalizedPath = realpath(dirname($resolvedPath)) . DIRECTORY_SEPARATOR . basename($filename);
+				if (strpos($normalizedPath, realpath($destDir) . DIRECTORY_SEPARATOR) !== 0) {
+					Z_Core::logError("Skipping ZIP entry that would extract outside destination: " . $stat['name']);
+					continue;
+				}
+				
 				$za->renameIndex($i, $filename);
 			}
 			else {
