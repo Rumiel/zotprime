@@ -40,6 +40,11 @@ class FullTextController extends ApiController {
 			$this->e403();
 		}
 		
+		// Full-text content requires file access permission
+		if (!$this->isWriteMethod() && !$this->permissions->canAccess($this->objectLibraryID, 'files')) {
+			$this->e403();
+		}
+		
 		// Multi-item write
 		if ($this->isWriteMethod()) {
 			if ($this->apiVersion < 3) {
@@ -138,6 +143,11 @@ class FullTextController extends ApiController {
 			}
 			
 			$this->e405();
+		}
+		
+		// Full-text content requires file access permission
+		if (!$this->permissions->canAccess($this->objectLibraryID, 'files')) {
+			$this->e403();
 		}
 		
 		$data = Zotero_FullText::getItemData($item->libraryID, $item->key);
