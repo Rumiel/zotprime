@@ -182,6 +182,30 @@ class ApiController extends Controller {
 			
 			if ($username == Z_CONFIG::$API_SUPER_USERNAME
 					&& $password == Z_CONFIG::$API_SUPER_PASSWORD) {
+				// Restrict superuser authentication to localhost and configured attachment servers
+				$remoteAddr = $_SERVER['REMOTE_ADDR'];
+				$allowed = false;
+				
+				// Allow localhost
+				if (in_array($remoteAddr, ['127.0.0.1', '::1'])) {
+					$allowed = true;
+				}
+				// Allow configured attachment server hosts
+				else if (!empty(Z_CONFIG::$ATTACHMENT_SERVER_HOSTS)) {
+					foreach (Z_CONFIG::$ATTACHMENT_SERVER_HOSTS as $host) {
+						$hostAddr = gethostbyname($host);
+						if ($remoteAddr === $hostAddr) {
+							$allowed = true;
+							break;
+						}
+					}
+				}
+				
+				if (!$allowed) {
+					Z_Core::logError("Superuser authentication attempted from unauthorized IP: $remoteAddr");
+					$this->e403('Superuser authentication not allowed from this source');
+				}
+				
 				$this->userID = 0;
 				$this->permissions = new Zotero_Permissions;
 				$this->permissions->setSuper();

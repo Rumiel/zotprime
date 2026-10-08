@@ -131,13 +131,22 @@ class Zotero_Attachments {
 				throw new Exception("Internal attachments request hit a non-attachment server");
 			}
 			
-			$prefix = 'http://' . Z_CONFIG::$API_SUPER_USERNAME .
-							":" . Z_CONFIG::$API_SUPER_PASSWORD . "@";
 			$path = Zotero_API::getItemURI($item) . "/file/view?int=1";
 			$path = preg_replace('/^[^:]+:\/\/[^\/]+/', '', $path);
+			
+			// Use HTTPS for internal requests to protect credentials in transit
+			$authHeader = 'Authorization: Basic ' . base64_encode(
+				Z_CONFIG::$API_SUPER_USERNAME . ':' . Z_CONFIG::$API_SUPER_PASSWORD
+			);
+			
 			$context = stream_context_create(array(
 				'http' => array(
-					'follow_location' => 0
+					'follow_location' => 0,
+					'header' => $authHeader
+				),
+				'ssl' => array(
+					'verify_peer' => true,
+					'verify_peer_name' => true
 				)
 			));
 			$url = false;
@@ -149,7 +158,7 @@ class Zotero_Attachments {
 				if ($host == $skipHost) {
 					continue;
 				}
-				$intURL = $prefix . $host . ":" . Z_CONFIG::$ATTACHMENT_SERVER_DYNAMIC_PORT . $path;
+				$intURL = 'https://' . $host . ":" . Z_CONFIG::$ATTACHMENT_SERVER_DYNAMIC_PORT . $path;
 				Z_Core::debug("Making GET request to $host");
 				if (file_get_contents($intURL, false, $context) !== false) {
 					foreach ($http_response_header as $header) {
