@@ -180,7 +180,9 @@ class ApiController extends Controller {
 			$username = $_SERVER['PHP_AUTH_USER'];
 			$password = $_SERVER['PHP_AUTH_PW'];
 			
-			if ($username == Z_CONFIG::$API_SUPER_USERNAME
+			if (Z_CONFIG::$API_SUPER_USERNAME !== ''
+					&& Z_CONFIG::$API_SUPER_PASSWORD !== ''
+					&& $username == Z_CONFIG::$API_SUPER_USERNAME
 					&& $password == Z_CONFIG::$API_SUPER_PASSWORD) {
 				$this->userID = 0;
 				$this->permissions = new Zotero_Permissions;
