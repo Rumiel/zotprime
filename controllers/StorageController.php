@@ -60,6 +60,12 @@ class StorageController extends ApiController {
 	
 	public function removestoragefiles() {
 		$this->allowMethods(array('POST'));
+		
+		// Check for library write access
+		if (!$this->permissions->canWrite($this->objectLibraryID)) {
+			$this->e403("Write access denied");
+		}
+		
 		$sql = "DELETE SFI FROM storageFileItems SFI JOIN items USING (itemID) WHERE libraryID=?";
 		Zotero_DB::query($sql, $this->objectLibraryID, Zotero_Shards::getByLibraryID($this->objectLibraryID));
 		Zotero_Storage::clearUserUsage(Zotero_Libraries::getOwner($this->objectLibraryID));
